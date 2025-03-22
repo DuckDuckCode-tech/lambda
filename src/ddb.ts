@@ -8,12 +8,16 @@ interface UserItem {
     userId: string;
     email: string;
     name: string;
+    avatarUrl: string;
+    githubUsername: string;
 }
 
 interface User {
     userId: string;
     email: string;
     name: string;
+    avatarUrl: string;
+    githubUsername: string;
 }
 
 interface AccessTokenItem {
@@ -39,7 +43,9 @@ export class DynamoDBService {
             pk: `USER#${user.userId}`,
             userId: user.userId,
             email: user.email,
-            name: user.name
+            name: user.name,
+            avatarUrl: user.avatarUrl,
+            githubUsername: user.githubUsername
         }
 
         const response = await this.ddbClient.send(
