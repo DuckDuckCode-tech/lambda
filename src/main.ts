@@ -1,10 +1,9 @@
-import * as os from "os";
 import axios from "axios";
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { Context, Handler } from "aws-lambda";
-import { DynamoDBService } from "./ddb.js";
-import { FileSystemService } from "./filesystem.js";
 import { Octokit } from "octokit";
+import { DynamoDBService } from "./ddb.js";
+import { Context, Handler } from "aws-lambda";
+import { FileSystemService } from "./filesystem.js";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 
 interface Payload {
 	accessToken: string;

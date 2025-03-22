@@ -1,5 +1,4 @@
 import { Octokit } from "octokit";
-import path from "path";
 
 export interface FileInformation {
     path: string;
