@@ -3,6 +3,11 @@ import * as path from "path";
 import * as util from "util";
 import { pipeline } from "stream/promises";
 
+export interface FileMapping {
+    filepath: string;
+    content: string;
+}
+
 const mkdir = util.promisify(fs.mkdir);
 const readFile = util.promisify(fs.readFile);
 const writeFile = util.promisify(fs.writeFile);
@@ -31,6 +36,18 @@ export class FileSystemService {
 
     async readFile(filePath: string): Promise<string> {
         return await readFile(filePath, "utf8");
+    }
+
+    async readFiles(filePaths: string[]): Promise<FileMapping[]> {
+        return Promise.all(
+            filePaths.map(async (filePath) => {
+                const content = await this.readFile(filePath);
+                return {
+                    filepath: filePath,
+                    content: content,
+                };
+            })
+        )
     }
 
     async writeFile(filePath: string, content: string) {

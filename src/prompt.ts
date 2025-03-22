@@ -1,7 +1,4 @@
-export interface FileMapping {
-    filepath: string;
-    content: string;
-}
+import { FileMapping } from "./filesystem.js";
 
 export class Prompt {
     public static firstStagePrompt(userPrompt: string, fileNames: string[]): string {
@@ -70,29 +67,40 @@ export class Prompt {
         `
         );
     }
-    public static secondStagePrompt(fileContents: FileMapping[]): string {
+
+    public static secondStagePrompt(userPrompt: string, listOfFiles: string[], fileContents: FileMapping[]): string {
         return (
             `
-        You are a highly skilled coding assistant. Your task is to modify or create files to satisfy the user's original prompt. Follow these steps carefully:
+        You are DuckDuckCode, a highly skilled coding assistant. Your task is to modify or create files to satisfy the user's original prompt. Follow these steps carefully:
+
+        ---
+
+        ### Context:
+        - **User's Prompt**: ${userPrompt}
+        - **Existing Files**: Here are all the files currently in the repository:
+          \`\`\`json
+          ${JSON.stringify(listOfFiles, null, 2)}
+          \`\`\`
+        - **Relevant Files**: Here are the contents of the files you previously identified as relevant to the user's prompt:
+          \`\`\`json
+          ${JSON.stringify(fileContents, null, 2)}
+          \`\`\`
 
         ---
 
         ### Step 1: Review the File Contents
-        Here are the contents of the relevant files that you identified earlier:
-        \`\`\`json
-        ${JSON.stringify(fileContents, null, 2)}
-        \`\`\`
+        Carefully review the contents of the relevant files and the list of existing files to understand the current state of the project.
 
         ---
 
         ### Step 2: Understand the User's Prompt
-        Carefully read the user's original prompt again to ensure you understand the changes or features they want to implement.
+        Revisit the user's prompt to ensure you fully understand the changes or features they want to implement:
+        **User's Prompt**: ${userPrompt}
 
         ---
 
         ### Step 3: Create/Modify the Files
-        Update the contents of the files or create new files as needed to satisfy the user's prompt.
-        Ensure that your changes are accurate, efficient, and follow best practices for the given programming language.
+        Update the contents of the files or create new files as needed to satisfy the user's prompt. Ensure that your changes are accurate, efficient, and follow best practices for the given programming language.
 
         ---
 
