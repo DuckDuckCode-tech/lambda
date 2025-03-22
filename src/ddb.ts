@@ -4,12 +4,25 @@ import { GetCommand, PutCommand } from "@aws-sdk/lib-dynamodb";
 const TABLE_NAME = "DDCTable";
 
 interface UserItem {
+    pk: string;
+    userId: string;
+    email: string;
+    name: string;
+}
+
+interface User {
     userId: string;
     email: string;
     name: string;
 }
 
 interface AccessTokenItem {
+    pk: string;
+    token: string;
+    userId: string;
+}
+
+interface AccessToken {
     token: string;
     userId: string;
 }
@@ -21,17 +34,22 @@ export class DynamoDBService {
         this.ddbClient = ddbClient;
     }
     
-    async createUser(userItem: UserItem): Promise<UserItem> {
+    async createUser(user: User): Promise<void> {
+        const item: UserItem = {
+            pk: `USER#${user.userId}`,
+            userId: user.userId,
+            email: user.email,
+            name: user.name
+        }
+
         const response = await this.ddbClient.send(
             new PutCommand({
                 TableName: TABLE_NAME,
-                Item: userItem
+                Item: item
             })
         );
 
         console.log("User created:", response);
-
-        return userItem;
     }
 
     async getUser(userId: string): Promise<UserItem | null> {
@@ -47,17 +65,21 @@ export class DynamoDBService {
         return (response.Item as UserItem | undefined) ?? null;
     }
 
-    async createAccessToken(accessTokenItem: AccessTokenItem): Promise<AccessTokenItem> {
+    async createAccessToken(accessToken: AccessToken): Promise<void> {
+        const item: AccessTokenItem = {
+            pk: `TOKEN#${accessToken.token}`,
+            token: accessToken.token,
+            userId: accessToken.userId
+        }
+
         const response = await this.ddbClient.send(
             new PutCommand({
                 TableName: TABLE_NAME,
-                Item: accessTokenItem
+                Item: item
             })
         );
 
         console.log("Access token created:", response);
-
-        return accessTokenItem;
     }
 
     async getAccessToken(token: string): Promise<AccessTokenItem | null> {
