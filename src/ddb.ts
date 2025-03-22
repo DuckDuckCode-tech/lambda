@@ -38,7 +38,7 @@ export class DynamoDBService {
         this.ddbClient = ddbClient;
     }
     
-    async createUser(user: User): Promise<void> {
+    public async createUser(user: User): Promise<void> {
         const item: UserItem = {
             pk: `USER#${user.userId}`,
             userId: user.userId,
@@ -58,7 +58,7 @@ export class DynamoDBService {
         console.log("User created:", response);
     }
 
-    async getUser(userId: string): Promise<UserItem | null> {
+    public async getUser(userId: string): Promise<UserItem | null> {
         const response = await this.ddbClient.send(
             new GetCommand({
                 TableName: TABLE_NAME,
@@ -71,7 +71,7 @@ export class DynamoDBService {
         return (response.Item as UserItem | undefined) ?? null;
     }
 
-    async createAccessToken(accessToken: AccessToken): Promise<void> {
+    public async createAccessToken(accessToken: AccessToken): Promise<void> {
         const item: AccessTokenItem = {
             pk: `TOKEN#${accessToken.token}`,
             token: accessToken.token,
@@ -88,7 +88,7 @@ export class DynamoDBService {
         console.log("Access token created:", response);
     }
 
-    async getAccessToken(token: string): Promise<AccessTokenItem | null> {
+    public async getAccessToken(token: string): Promise<AccessTokenItem | null> {
         const response = await this.ddbClient.send(
             new GetCommand({
                 TableName: TABLE_NAME,
@@ -99,5 +99,23 @@ export class DynamoDBService {
         console.log("Access token retrieved:", response);
 
         return (response.Item as AccessTokenItem | undefined) ?? null;
+    }
+
+    public async getUserFromAccessToken(token: string): Promise<UserItem | null> {
+        const tokenItem = await this.getAccessToken(token);
+        if (!tokenItem) {
+            console.log("Access token not found:", token);
+            return null;
+        }
+        console.log("Access token retrieved:", tokenItem);
+
+        const userItem = await this.getUser(tokenItem.userId);
+        if (!userItem) {
+            console.log("User not found for access token:", tokenItem.userId);
+            return null;
+        }
+        console.log("User retrieved from access token:", userItem);
+
+        return userItem;
     }
 }
