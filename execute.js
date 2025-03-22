@@ -3,5 +3,8 @@
 import { handler } from "./dist/main.js"
 
 handler({
-    hi: "hi"
+    accessToken: "...",
+    repositoryName: "test-repo",
+    repositoryBranch: "main",
+    userPrompt: "test"
 }, {}).catch()

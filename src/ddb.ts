@@ -62,11 +62,12 @@ export class DynamoDBService {
         const response = await this.ddbClient.send(
             new GetCommand({
                 TableName: TABLE_NAME,
-                Key: { userId }
+                Key: {
+                    "pk": `USER#${userId}`
+                }
             })
         );
-
-        console.log("User retrieved:", response);
+        console.log(`User retrieved: ${JSON.stringify(response.Item)}`);
 
         return (response.Item as UserItem | undefined) ?? null;
     }
@@ -92,11 +93,13 @@ export class DynamoDBService {
         const response = await this.ddbClient.send(
             new GetCommand({
                 TableName: TABLE_NAME,
-                Key: { token }
+                Key: {
+                    "pk": `TOKEN#${token}`
+                }
             })
         );
 
-        console.log("Access token retrieved:", response);
+        console.log(`Access token retrieved: ${JSON.stringify(response.Item)}`);
 
         return (response.Item as AccessTokenItem | undefined) ?? null;
     }
@@ -107,14 +110,12 @@ export class DynamoDBService {
             console.log("Access token not found:", token);
             return null;
         }
-        console.log("Access token retrieved:", tokenItem);
 
         const userItem = await this.getUser(tokenItem.userId);
         if (!userItem) {
             console.log("User not found for access token:", tokenItem.userId);
             return null;
         }
-        console.log("User retrieved from access token:", userItem);
 
         return userItem;
     }
