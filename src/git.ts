@@ -1,4 +1,5 @@
 import { Octokit } from "octokit";
+import path from "path";
 
 export interface FileInformation {
     path: string;
@@ -57,7 +58,13 @@ export class GitService {
         });
     }
 
-    async createCommit(owner: string, repositoryName: string, message: string, treeSha: string, parentShas: string[]) {
+    async createCommit(
+        owner: string,
+        repositoryName: string,
+        message: string,
+        treeSha: string,
+        parentShas: string[]
+    ) {
         return await this.octokit.rest.git.createCommit({
             owner,
             repo: repositoryName,
@@ -76,7 +83,14 @@ export class GitService {
         });
     }
 
-    async createPullRequest(owner: string, repositoryName: string, title: string, head: string, base: string, body: string) {
+    async createPullRequest(
+        owner: string,
+        repositoryName: string,
+        title: string,
+        head: string,
+        base: string,
+        body: string
+    ) {
         return await this.octokit.rest.pulls.create({
             owner,
             repo: repositoryName,
