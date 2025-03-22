@@ -1,3 +1,4 @@
+import path from "path";
 import axios from "axios";
 import * as tar from "tar";
 import { Octokit } from "octokit";
@@ -6,7 +7,6 @@ import { Context, Handler } from "aws-lambda";
 import { FileSystemService } from "./filesystem.js";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import path from "path";
 
 interface Payload {
     accessToken: string;
@@ -32,7 +32,6 @@ export const handler: Handler = async (payload: Payload, context: Context) => {
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
     // use Prompt class to get prompts
     // const result = await model.generateContent(payload.userPrompt)
-
 
     const user = await ddbService.getUserFromAccessToken(payload.accessToken);
     if (!user) {

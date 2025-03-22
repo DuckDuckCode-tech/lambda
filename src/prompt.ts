@@ -68,6 +68,7 @@ export class Prompt {
         `
         );
     }
+
     public static secondStagePrompt(fileContents: FileMapping[]): string {
         const jsonFiles = JSON.stringify(fileContents);
 
@@ -128,5 +129,4 @@ export class Prompt {
         `
         );
     }
-
 }
