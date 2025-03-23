@@ -8,6 +8,7 @@ import { FileChange, FileSystemService } from "./filesystem.js";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Prompt } from "./prompt.js";
+import { GitService } from "./git.js";
 
 interface Payload {
     accessToken: string;
@@ -15,6 +16,7 @@ interface Payload {
     repositoryBranch: string;
     userPrompt: string;
 }
+
 
 const GEMINI_API_KEY: string = "AIzaSyBlOAmmmwlejJV4fMu4UxMxSygIoE-RP20"
 const STRIP_MD_REGEXP: RegExp = /^```json\s*([\s\S]*?)\s*```$/gm
@@ -98,6 +100,51 @@ export const handler: Handler = async (payload: Payload, context: Context) => {
     console.log("File changes to be written:", fileChanges)
     await fileSystemService.writeFiles(fileChanges)
     console.log("File changes have been written!")
-};
 
+    const owner = userInfo.data.login
+    const repo = payload.repositoryName
+    const branch = payload.repositoryBranch
+
+    const gitService = new GitService(accessToken)
+
+    console.log('Getting base tree SHA...');
+    const { data: baseRef } = await gitService.getRef(owner, repo, `heads/${branch}`)
+
+    console.log('Creating new branch...');
+    const branchName = `gemini-changes-${Date.now()}`;
+    await gitService.createRef(owner, repo, `refs/heads/${branchName}`, baseRef.object.sha);
+    console.log('Creating blobs for changed files...');
+    const tree: {
+        path: string;
+        mode: "100644" | "100755" | "040000" | "160000" | "120000";
+        type: "blob" | "tree" | "commit";
+        sha?: string | null;
+        content?: string;
+    }[] = await Promise.all(fileChanges.map(async ({ filePath, content }) => {
+
+        const data = await gitService.createBlob(owner, repo, Buffer.from(content).toString('base64'), 'base64');
+
+        console.log(`Created blob for file: ${filePath}`);
+        return {
+            path: path.relative(sourceDir, filePath),
+            mode: '100644',
+            type: 'blob',
+            sha: data.sha,
+        };
+    }));
+
+    console.log('Creating new tree...');
+    const { data: newTree } = await gitService.createTree(owner, repo, tree, baseRef.object.sha);
+
+    console.log('Creating commit...');
+    const { data: newCommit } = await gitService.createCommit(owner, repo, `Gemini: ${payload.userPrompt.substring(0, 50)}`, newTree.sha, [baseRef.object.sha]);
+
+    console.log('Updating branch reference...');
+    await gitService.updateRef(owner, repo, `heads/${branchName}`, newCommit.sha);
+
+    console.log('Creating pull request...');
+    const { data: pr } = await gitService.createPullRequest(owner, repo, `Gemini: ${payload.userPrompt.substring(0, 50)}`, branchName, branch, `Automated changes for: ${payload.userPrompt}`);
+
+    console.log('Pull request created:', pr.html_url);
+};
 

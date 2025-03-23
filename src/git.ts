@@ -15,6 +15,10 @@ export class GitService {
         this.octokit = new Octokit({ auth: accessToken });
     }
 
+    async getRef(owner: string, repo: string, ref: string) {
+        return this.octokit.rest.git.getRef({ owner, repo, ref })
+    }
+
     async getUserInformation() {
         const response = await this.octokit.rest.users.getAuthenticated();
         return response.data;
@@ -37,12 +41,16 @@ export class GitService {
         return response.data;
     }
 
-    async createBlob(owner: string, repositoryName: string, content: string) {
+    async createRef(owner: string, repo: string, ref: string, sha: string) {
+        this.octokit.rest.git.createRef({ owner, repo, ref, sha })
+    }
+
+    async createBlob(owner: string, repositoryName: string, content: string, encoding: string) {
         const response = await this.octokit.rest.git.createBlob({
             owner,
             repo: repositoryName,
             content,
-            encoding: "utf-8"
+            encoding,
         });
 
         return response.data;
