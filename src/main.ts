@@ -82,21 +82,26 @@ export const handler: Handler = async (payload: Payload, context: Context) => {
 
     console.log("Entering GEMINI first stage")
     const firstStagePrompt = Prompt.firstStagePrompt(payload.userPrompt, relativePaths)
-    var result = await model.generateContent(firstStagePrompt)
-    var responseText = result.response.text().replace(STRIP_MD_REGEXP, '$1').trim();
-    var paths: string[] = JSON.parse(responseText)
-    paths = paths.map((fpath) => path.join(sourceDir, fpath))
-    const requestedFileContents = await fileSystemService.readFiles(paths)
+    const firstStageResult = await model.generateContent(firstStagePrompt)
+    const firstStageResponseText = firstStageResult.response.text().replace(STRIP_MD_REGEXP, '$1').trim();
+    const paths: string[] = JSON.parse(firstStageResponseText);
     console.log("Relevant files", paths)
+    const correctedPaths = paths.map((fpath) => path.join(sourceDir, fpath));
+    console.log("Corrected paths", correctedPaths)
+    const requestedFileContents = await fileSystemService.readFiles(correctedPaths)
+    const relativeRequestedFileContents = requestedFileContents.map((file) =>  ({
+        ...file,
+        filePath: path.relative(sourceDir, file.filePath)
+    }));
 
     console.log("Entering GEMINI second stage")
-    const secondStagePrompt = Prompt.secondStagePrompt(payload.userPrompt, relativePaths, requestedFileContents)
-    result = await model.generateContent(secondStagePrompt)
-    responseText = result.response.text().replace(STRIP_MD_REGEXP, '$1').trim();
-    const fileChanges: FileChange[] = JSON.parse(responseText)
-    fileChanges.forEach((fileChange) => {
-        fileChange.filePath = path.join(sourceDir, fileChange.filePath)
-    })
+    const secondStagePrompt = Prompt.secondStagePrompt(payload.userPrompt, relativePaths, relativeRequestedFileContents)
+    const secondStageResult = await model.generateContent(secondStagePrompt)
+    const secondStageResponseText = secondStageResult.response.text().replace(STRIP_MD_REGEXP, '$1').trim();
+    const fileChanges: FileChange[] = (JSON.parse(secondStageResponseText) as FileChange[]).map((fileChange) => ({
+        ...fileChange,
+        filePath: path.join(sourceDir, fileChange.filePath),
+    }));
     console.log("File changes to be written:", fileChanges)
     await fileSystemService.writeFiles(fileChanges)
     console.log("File changes have been written!")
