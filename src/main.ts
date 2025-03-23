@@ -96,17 +96,9 @@ export const handler: Handler = async (payload: Payload, context: Context) => {
 
     console.log("Entering GEMINI second stage")
     const secondStagePrompt = Prompt.secondStagePrompt(payload.userPrompt, relativePaths, relativeRequestedFileContents)
-    let secondStageResult: string = "";
-    const secondStageResultStream = await model.generateContentStream(secondStagePrompt)
-    for await (const chunk of secondStageResultStream.stream) {
-        const text = chunk.text();
-        if (text) {
-            console.log(`Second stage stream chunk: ${text}`);
-        }
-        secondStageResult += text;
-    }
-    console.log("Second stage result:", secondStageResult)
-    const secondStageResponseText = secondStageResult.substring(8, secondStageResult.length - 4).trim();
+    const secondStageResult = await model.generateContent(secondStagePrompt)
+    console.log("Second stage result:", secondStageResult.response.text())
+    const secondStageResponseText = secondStageResult.response.text().substring(8, secondStageResult.response.text().length - 4).trim();
     console.log(`Second stage response text: ${secondStageResponseText.substring(secondStageResponseText.length - 4000, secondStageResponseText.length)}`);
     console.log(`Second stage response text length: ${secondStageResponseText.length}`);
     console.log((JSON.parse(secondStageResponseText) as FileChange[]).map((fileChange) => fileChange.filePath));
