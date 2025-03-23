@@ -82,6 +82,7 @@ export const handler: Handler = async (payload: Payload, context: Context) => {
     console.log("Entering GEMINI first stage")
     const firstStagePrompt = Prompt.firstStagePrompt(payload.userPrompt, relativePaths)
     const firstStageResult = await model.generateContent(firstStagePrompt)
+    console.log("First stage result:", firstStageResult.response.text())
     const firstStageResponseText = firstStageResult.response.text().replace(STRIP_MD_REGEXP, '$1').trim();
     const paths: string[] = JSON.parse(firstStageResponseText);
     console.log("Relevant files", paths)
@@ -96,6 +97,7 @@ export const handler: Handler = async (payload: Payload, context: Context) => {
     console.log("Entering GEMINI second stage")
     const secondStagePrompt = Prompt.secondStagePrompt(payload.userPrompt, relativePaths, relativeRequestedFileContents)
     const secondStageResult = await model.generateContent(secondStagePrompt)
+    console.log("Second stage result:", secondStageResult.response.text())
     const secondStageResponseText = secondStageResult.response.text().replace(STRIP_MD_REGEXP, '$1').trim();
     const fileChanges: FileChange[] = (JSON.parse(secondStageResponseText) as FileChange[]).map((fileChange) => ({
         ...fileChange,
