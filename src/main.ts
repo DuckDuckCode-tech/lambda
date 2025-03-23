@@ -154,7 +154,7 @@ export const handler: Handler = async (payload: Payload, context: Context) => {
     console.log("Adding chat message");
     const repositoryItem = await ddbService.getRepository(userInfo.data.id.toString(), repositoryName) as RepositoryItem;
     repositoryItem.chats.push({
-        message: `I just created a Pull Request with the changes you requested. Here's a link!: <a class='underline' target='_blank' href='${pr.html_url}'>${pr.html_url}</a>`,
+        message: `I just created a Pull Request with the changes you requested! Here's a link: <a style='text-decoration: underline;' target='_blank' href='${pr.html_url}'>${pr.html_url}</a>`,
         from: "website",
         createdAt: new Date().toISOString()
     });
