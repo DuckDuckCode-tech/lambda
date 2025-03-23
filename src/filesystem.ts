@@ -8,7 +8,7 @@ export interface FileMapping {
     content: string;
 }
 
-export interface FileChanges {
+export interface FileChange {
     filePath: string;
     content: string;
     isNew: boolean;
@@ -60,9 +60,10 @@ export class FileSystemService {
         await writeFile(filePath, content, "utf8");
     }
 
-    async writeFiles(fileChanges: FileChanges[]) {
+    async writeFiles(fileChanges: FileChange[]) {
         await Promise.all(
             fileChanges.map(async (fileChange) => {
+                await this.createDirectory(path.dirname(fileChange.filePath))
                 await this.writeFile(fileChange.filePath, fileChange.content)
             })
         )
