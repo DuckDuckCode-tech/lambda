@@ -99,6 +99,8 @@ export const handler: Handler = async (payload: Payload, context: Context) => {
     const secondStageResult = await model.generateContent(secondStagePrompt)
     console.log("Second stage result:", secondStageResult.response.text())
     const secondStageResponseText = firstStageResult.response.text().substring(8, firstStageResult.response.text().length - 4).trim();
+    console.log(`Second stage response text: ${secondStageResponseText}`);
+    console.log((JSON.parse(secondStageResponseText) as FileChange[]).map((fileChange) => fileChange.filePath));
     const fileChanges: FileChange[] = (JSON.parse(secondStageResponseText) as FileChange[]).map((fileChange) => ({
         ...fileChange,
         filePath: path.join(sourceDir, fileChange.filePath),

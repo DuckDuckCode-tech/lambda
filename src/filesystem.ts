@@ -47,7 +47,7 @@ export class FileSystemService {
     async readFiles(filePaths: string[]): Promise<FileMapping[]> {
         return Promise.all(
             filePaths.map(async (filePath) => {
-                let content: string;
+                let content: string = "";
                 try {
                     content = await this.readFile(filePath);
                 }
