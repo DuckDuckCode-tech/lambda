@@ -4,7 +4,7 @@ import * as tar from "tar";
 import { Octokit } from "octokit";
 import { DynamoDBService } from "./ddb.js";
 import { Context, Handler } from "aws-lambda";
-import { FileSystemService } from "./filesystem.js";
+import { FileChange, FileSystemService } from "./filesystem.js";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Prompt } from "./prompt.js";
@@ -17,6 +17,7 @@ interface Payload {
 }
 
 const GEMINI_API_KEY: string = "AIzaSyBlOAmmmwlejJV4fMu4UxMxSygIoE-RP20"
+const STRIP_MD_REGEXP: RegExp = /^```json\s*([\s\S]*?)\s*```$/gm
 
 export const handler: Handler = async (payload: Payload, context: Context) => {
     console.log(`Received invocation with event: ${JSON.stringify(payload)}`);
@@ -76,14 +77,27 @@ export const handler: Handler = async (payload: Payload, context: Context) => {
     const allFiles = await fileSystemService.getAllFilepathsInDirectory(sourceDir);
     const relativePaths = allFiles.map(file => path.relative(sourceDir, file));
     console.log("All files:", relativePaths);
+
+    console.log("Entering GEMINI first stage")
     const firstStagePrompt = Prompt.firstStagePrompt(payload.userPrompt, relativePaths)
     var result = await model.generateContent(firstStagePrompt)
-    var responseText = result.response.text().replace(/^```json\s*([\s\S]*?)\s*```$/gm, '$1').trim();
+    var responseText = result.response.text().replace(STRIP_MD_REGEXP, '$1').trim();
     var paths: string[] = JSON.parse(responseText)
     paths = paths.map((fpath) => path.join(sourceDir, fpath))
     const requestedFileContents = await fileSystemService.readFiles(paths)
+    console.log("Relevant files", paths)
+
+    console.log("Entering GEMINI second stage")
     const secondStagePrompt = Prompt.secondStagePrompt(payload.userPrompt, relativePaths, requestedFileContents)
     result = await model.generateContent(secondStagePrompt)
-    console.log(result.response.text())
+    responseText = result.response.text().replace(STRIP_MD_REGEXP, '$1').trim();
+    const fileChanges: FileChange[] = JSON.parse(responseText)
+    fileChanges.forEach((fileChange) => {
+        fileChange.filePath = path.join(sourceDir, fileChange.filePath)
+    })
+    console.log("File changes to be written:", fileChanges)
+    await fileSystemService.writeFiles(fileChanges)
+    console.log("File changes have been written!")
 };
+
 
