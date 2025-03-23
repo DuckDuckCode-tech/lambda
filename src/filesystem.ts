@@ -4,8 +4,14 @@ import * as util from "util";
 import { pipeline } from "stream/promises";
 
 export interface FileMapping {
-    filepath: string;
+    filePath: string;
     content: string;
+}
+
+export interface FileChanges {
+    filePath: string;
+    content: string;
+    isNew: boolean;
 }
 
 const mkdir = util.promisify(fs.mkdir);
@@ -43,7 +49,7 @@ export class FileSystemService {
             filePaths.map(async (filePath) => {
                 const content = await this.readFile(filePath);
                 return {
-                    filepath: filePath,
+                    filePath: filePath,
                     content: content,
                 };
             })
