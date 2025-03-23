@@ -83,7 +83,7 @@ export const handler: Handler = async (payload: Payload, context: Context) => {
     const firstStagePrompt = Prompt.firstStagePrompt(payload.userPrompt, relativePaths)
     const firstStageResult = await model.generateContent(firstStagePrompt)
     console.log("First stage result:", firstStageResult.response.text())
-    const firstStageResponseText = firstStageResult.response.text().replace(STRIP_MD_REGEXP, '$1').trim();
+    const firstStageResponseText = firstStageResult.response.text().substring(8, firstStageResult.response.text().length - 4).trim();
     const paths: string[] = JSON.parse(firstStageResponseText);
     console.log("Relevant files", paths)
     const correctedPaths = paths.map((fpath) => path.join(sourceDir, fpath));
@@ -98,7 +98,7 @@ export const handler: Handler = async (payload: Payload, context: Context) => {
     const secondStagePrompt = Prompt.secondStagePrompt(payload.userPrompt, relativePaths, relativeRequestedFileContents)
     const secondStageResult = await model.generateContent(secondStagePrompt)
     console.log("Second stage result:", secondStageResult.response.text())
-    const secondStageResponseText = secondStageResult.response.text().replace(STRIP_MD_REGEXP, '$1').trim();
+    const secondStageResponseText = firstStageResult.response.text().substring(8, firstStageResult.response.text().length - 4).trim();
     const fileChanges: FileChange[] = (JSON.parse(secondStageResponseText) as FileChange[]).map((fileChange) => ({
         ...fileChange,
         filePath: path.join(sourceDir, fileChange.filePath),
