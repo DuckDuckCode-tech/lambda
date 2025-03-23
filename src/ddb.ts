@@ -1,9 +1,9 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { GetCommand, PutCommand } from "@aws-sdk/lib-dynamodb";
+import { GetCommand, PutCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 
 const TABLE_NAME = "DDCTable";
 
-interface UserItem {
+export interface UserItem {
     pk: string;
     userId: string;
     email: string;
@@ -12,7 +12,7 @@ interface UserItem {
     githubUsername: string;
 }
 
-interface User {
+export interface User {
     userId: string;
     email: string;
     name: string;
@@ -20,15 +20,42 @@ interface User {
     githubUsername: string;
 }
 
-interface AccessTokenItem {
+export interface AccessTokenItem {
     pk: string;
     token: string;
     userId: string;
 }
 
-interface AccessToken {
+export interface AccessToken {
     token: string;
     userId: string;
+}
+
+export interface Chat {
+    from: "user" | "website";
+    message: string;
+    createdAt: string;
+}
+
+export interface RepositoryItem {
+    pk: string;
+    userId: string;
+    repositoryId: string;
+    repositoryBranch: string;
+    repositoryName: string;
+    repositoryDescription: string;
+    repositoryUrl: string;
+    chats: Chat[];
+}
+
+export interface Repository {
+    userId: string;
+    repositoryId: string;
+    repositoryBranch: string;
+    repositoryName: string;
+    repositoryDescription: string;
+    repositoryUrl: string;
+    chats: Chat[];
 }
 
 export class DynamoDBService {
@@ -37,7 +64,7 @@ export class DynamoDBService {
     constructor(ddbClient: DynamoDBClient) {
         this.ddbClient = ddbClient;
     }
-    
+
     public async createUser(user: User): Promise<void> {
         const item: UserItem = {
             pk: `USER#${user.userId}`,
@@ -46,7 +73,7 @@ export class DynamoDBService {
             name: user.name,
             avatarUrl: user.avatarUrl,
             githubUsername: user.githubUsername
-        }
+        };
 
         const response = await this.ddbClient.send(
             new PutCommand({
@@ -63,7 +90,7 @@ export class DynamoDBService {
             new GetCommand({
                 TableName: TABLE_NAME,
                 Key: {
-                    "pk": `USER#${userId}`
+                    pk: `USER#${userId}`
                 }
             })
         );
@@ -77,7 +104,7 @@ export class DynamoDBService {
             pk: `TOKEN#${accessToken.token}`,
             token: accessToken.token,
             userId: accessToken.userId
-        }
+        };
 
         const response = await this.ddbClient.send(
             new PutCommand({
@@ -94,7 +121,7 @@ export class DynamoDBService {
             new GetCommand({
                 TableName: TABLE_NAME,
                 Key: {
-                    "pk": `TOKEN#${token}`
+                    pk: `TOKEN#${token}`
                 }
             })
         );
@@ -118,5 +145,58 @@ export class DynamoDBService {
         }
 
         return userItem;
+    }
+
+    public async createRepository(repository: Repository): Promise<void> {
+        const item: RepositoryItem = {
+            pk: `REPOSITORY#${repository.userId}#${repository.repositoryName}`,
+            repositoryId: repository.repositoryId,
+            userId: repository.userId,
+            repositoryBranch: repository.repositoryBranch,
+            repositoryName: repository.repositoryName,
+            repositoryDescription: repository.repositoryDescription,
+            repositoryUrl: repository.repositoryUrl,
+            chats: repository.chats
+        };
+
+        const response = await this.ddbClient.send(
+            new PutCommand({
+                TableName: TABLE_NAME,
+                Item: item
+            })
+        );
+
+        console.log("Repository created:", response);
+    }
+
+    public async getRepository(userId: string, repositoryName: string): Promise<RepositoryItem | null> {
+        const response = await this.ddbClient.send(
+            new GetCommand({
+                TableName: TABLE_NAME,
+                Key: {
+                    pk: `REPOSITORY#${userId}#${repositoryName}`
+                }
+            })
+        );
+
+        console.log(`Repository retrieved: ${JSON.stringify(response.Item)}`);
+
+        return (response.Item as RepositoryItem | undefined) ?? null;
+    }
+
+    public async getRepositoriesForUser(userId: string): Promise<RepositoryItem[]> {
+        const response = await this.ddbClient.send(
+            new ScanCommand({
+                TableName: TABLE_NAME,
+                FilterExpression: "begins_with(pk, :pk)",
+                ExpressionAttributeValues: {
+                    ":pk": `REPOSITORY#${userId}#`
+                }
+            })
+        );
+
+        console.log(`Repositories retrieved for user ${userId}: ${JSON.stringify(response.Items)}`);
+
+        return (response.Items as RepositoryItem[] | undefined) ?? [];
     }
 }

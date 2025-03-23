@@ -2,7 +2,7 @@ import path from "path";
 import axios from "axios";
 import * as tar from "tar";
 import { Octokit } from "octokit";
-import { DynamoDBService } from "./ddb.js";
+import { DynamoDBService, RepositoryItem } from "./ddb.js";
 import { Context, Handler } from "aws-lambda";
 import { FileChange, FileSystemService } from "./filesystem.js";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
@@ -16,7 +16,6 @@ interface Payload {
     repositoryBranch: string;
     userPrompt: string;
 }
-
 
 const GEMINI_API_KEY: string = "AIzaSyBlOAmmmwlejJV4fMu4UxMxSygIoE-RP20"
 const STRIP_MD_REGEXP: RegExp = /^```json\s*([\s\S]*?)\s*```$/gm
@@ -151,5 +150,15 @@ export const handler: Handler = async (payload: Payload, context: Context) => {
     const { data: pr } = await gitService.createPullRequest(owner, repo, `Gemini: ${payload.userPrompt.substring(0, 50)}`, branchName, branch, `Automated changes for: ${payload.userPrompt}`);
 
     console.log('Pull request created:', pr.html_url);
+
+    console.log("Adding chat message");
+    const repositoryItem = await ddbService.getRepository(userInfo.data.id.toString(), repositoryName) as RepositoryItem;
+    repositoryItem.chats.push({
+        message: `I just created a Pull Request with the changes you requested. Here's a link!: <a href='${pr.html_url}'>${pr.html_url}</a>`,
+        from: "website",
+        createdAt: new Date().toISOString()
+    });
+    await ddbService.createRepository(repositoryItem);
+    console.log("Chat message added");
 };
 
