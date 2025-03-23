@@ -115,7 +115,7 @@ export const handler: Handler = async (payload: Payload, context: Context) => {
     const { data: baseRef } = await gitService.getRef(owner, repo, `heads/${branch}`)
 
     console.log('Creating new branch...');
-    const branchName = `gemini-changes-${Date.now()}`;
+    const branchName = `duckduckcode-${Date.now()}`;
     await gitService.createRef(owner, repo, `refs/heads/${branchName}`, baseRef.object.sha);
     console.log('Creating blobs for changed files...');
     const tree: {
@@ -141,13 +141,13 @@ export const handler: Handler = async (payload: Payload, context: Context) => {
     const { data: newTree } = await gitService.createTree(owner, repo, tree, baseRef.object.sha);
 
     console.log('Creating commit...');
-    const { data: newCommit } = await gitService.createCommit(owner, repo, `Gemini: ${payload.userPrompt.substring(0, 50)}`, newTree.sha, [baseRef.object.sha]);
+    const { data: newCommit } = await gitService.createCommit(owner, repo, `DuckDuckCode: ${payload.userPrompt.substring(0, 50)}`, newTree.sha, [baseRef.object.sha]);
 
     console.log('Updating branch reference...');
     await gitService.updateRef(owner, repo, `heads/${branchName}`, newCommit.sha);
 
     console.log('Creating pull request...');
-    const { data: pr } = await gitService.createPullRequest(owner, repo, `Gemini: ${payload.userPrompt.substring(0, 50)}`, branchName, branch, `Automated changes for: ${payload.userPrompt}`);
+    const { data: pr } = await gitService.createPullRequest(owner, repo, `DuckDuckCode: ${payload.userPrompt.substring(0, 50)}`, branchName, branch, `DuckDuckCode's automated changes for the user submitted request: '${payload.userPrompt}'`);
 
     console.log('Pull request created:', pr.html_url);
 
