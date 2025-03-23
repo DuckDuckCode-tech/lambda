@@ -98,7 +98,7 @@ export const handler: Handler = async (payload: Payload, context: Context) => {
     const secondStagePrompt = Prompt.secondStagePrompt(payload.userPrompt, relativePaths, relativeRequestedFileContents)
     const secondStageResult = await model.generateContent(secondStagePrompt)
     console.log("Second stage result:", secondStageResult.response.text())
-    const secondStageResponseText = firstStageResult.response.text().substring(8, firstStageResult.response.text().length - 4).trim();
+    const secondStageResponseText = secondStageResult.response.text().substring(8, secondStageResult.response.text().length - 4).trim();
     console.log(`Second stage response text: ${secondStageResponseText}`);
     console.log((JSON.parse(secondStageResponseText) as FileChange[]).map((fileChange) => fileChange.filePath));
     const fileChanges: FileChange[] = (JSON.parse(secondStageResponseText) as FileChange[]).map((fileChange) => ({
