@@ -60,6 +60,14 @@ export class FileSystemService {
         await writeFile(filePath, content, "utf8");
     }
 
+    async writeFiles(fileChanges: FileChanges[]) {
+        await Promise.all(
+            fileChanges.map(async (fileChange) => {
+                await this.writeFile(fileChange.filePath, fileChange.content)
+            })
+        )
+    }
+
     async rename(oldPath: string, newPath: string) {
         await rename(oldPath, newPath);
     }
